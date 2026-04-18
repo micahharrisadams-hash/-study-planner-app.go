@@ -1,199 +1,188 @@
-import { createClient } from "@/lib/supabase/server"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { GraduationCap, ClipboardList, Clock, CheckCircle2, Plus } from "lucide-react"
-import Link from "next/link"
-import type { Assignment, Class } from "@/lib/types"
-import { AssignmentList } from "@/components/assignment-list"
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  BookOpen,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  GraduationCap,
+  LayoutDashboard,
+} from "lucide-react";
 
-export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const { data: classes } = await supabase
-    .from("classes")
-    .select("*")
-    .eq("user_id", user?.id)
-    .order("name")
-
-  const { data: assignments } = await supabase
-    .from("assignments")
-    .select("*, classes(*)")
-    .eq("user_id", user?.id)
-    .order("due_date", { ascending: true })
-
-  const upcomingAssignments = (assignments as Assignment[] | null)?.filter(
-    (a) => !a.completed && new Date(a.due_date) >= new Date()
-  ) ?? []
-
-  const overdueAssignments = (assignments as Assignment[] | null)?.filter(
-    (a) => !a.completed && new Date(a.due_date) < new Date()
-  ) ?? []
-
-  const completedCount = (assignments as Assignment[] | null)?.filter((a) => a.completed).length ?? 0
-  const totalAssignments = assignments?.length ?? 0
-
+export default function HomePage() {
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back! Here&apos;s your academic overview.</p>
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="h-8 w-8 text-primary" />
+            <span className="text-xl font-bold text-foreground">StudyHub</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link href="/auth/login">
+              <Button variant="ghost">Log in</Button>
+            </Link>
+            <Link href="/auth/sign-up">
+              <Button>Get Started</Button>
+            </Link>
+          </div>
         </div>
-        <Button asChild>
-          <Link href="/classes">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Assignment
-          </Link>
-        </Button>
-      </div>
+      </header>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Classes</CardTitle>
-            <GraduationCap className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{classes?.length ?? 0}</div>
-            <p className="text-xs text-muted-foreground">Active courses</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Upcoming</CardTitle>
-            <ClipboardList className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{upcomingAssignments.length}</div>
-            <p className="text-xs text-muted-foreground">Assignments due</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Overdue</CardTitle>
-            <Clock className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">{overdueAssignments.length}</div>
-            <p className="text-xs text-muted-foreground">Need attention</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completedCount}</div>
-            <p className="text-xs text-muted-foreground">
-              {totalAssignments > 0
-                ? `${Math.round((completedCount / totalAssignments) * 100)}% completion rate`
-                : "No assignments yet"}
+      <main>
+        <section className="py-20 md:py-32">
+          <div className="container mx-auto px-4 text-center">
+            <h1 className="text-4xl md:text-6xl font-bold text-foreground max-w-4xl mx-auto text-balance leading-tight">
+              Stay organized with your schoolwork
+            </h1>
+            <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto text-pretty">
+              The simple way for college students to manage classes, track
+              assignments, and never miss a deadline again.
             </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Overdue Assignments</CardTitle>
-            <CardDescription>
-              {overdueAssignments.length === 0
-                ? "Great job! No overdue assignments."
-                : `${overdueAssignments.length} assignment${overdueAssignments.length > 1 ? "s" : ""} past due date`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {overdueAssignments.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
-                <CheckCircle2 className="h-12 w-12 mx-auto mb-2 text-primary/50" />
-                <p>All caught up!</p>
-              </div>
-            ) : (
-              <AssignmentList assignments={overdueAssignments.slice(0, 5)} showClass />
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Upcoming Assignments</CardTitle>
-            <CardDescription>
-              {upcomingAssignments.length === 0
-                ? "No upcoming assignments."
-                : `Next ${Math.min(upcomingAssignments.length, 5)} assignments`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {upcomingAssignments.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
-                <ClipboardList className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
-                <p>No upcoming assignments</p>
-                <Button asChild variant="outline" className="mt-4">
-                  <Link href="/classes">Add your first assignment</Link>
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link href="/auth/sign-up">
+                <Button size="lg" className="text-lg px-8">
+                  Start for Free
                 </Button>
-              </div>
-            ) : (
-              <AssignmentList assignments={upcomingAssignments.slice(0, 5)} showClass />
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {classes && classes.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Your Classes</CardTitle>
-                <CardDescription>Quick overview of your enrolled courses</CardDescription>
-              </div>
-              <Button asChild variant="outline" size="sm">
-                <Link href="/classes">View All</Link>
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {(classes as Class[]).map((cls) => (
-                <Badge
-                  key={cls.id}
-                  variant="secondary"
-                  className="px-3 py-1.5 text-sm"
-                  style={{
-                    backgroundColor: `${cls.color}20`,
-                    color: cls.color,
-                    borderColor: cls.color,
-                  }}
-                >
-                  {cls.name}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {(!classes || classes.length === 0) && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <GraduationCap className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-            <h3 className="text-lg font-semibold mb-2">Get started with StudyHub</h3>
-            <p className="text-muted-foreground mb-4">
-              Add your first class to start tracking assignments and deadlines.
-            </p>
-            <Button asChild>
-              <Link href="/classes">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Your First Class
               </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+              <Link href="/auth/login">
+                <Button size="lg" variant="outline" className="text-lg px-8">
+                  Log in
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20 bg-muted/30">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center text-foreground mb-12">
+              Everything you need to succeed
+            </h2>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
+              <Card className="border-0 shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                    <LayoutDashboard className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    Dashboard Overview
+                  </h3>
+                  <p className="text-muted-foreground">
+                    See all your upcoming assignments and deadlines at a glance
+                    with a clean, intuitive dashboard.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                    <BookOpen className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    Class Management
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Organize your courses with custom colors and keep all your
+                    assignments grouped by class.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                    <CheckCircle2 className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    Assignment Tracking
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Add assignments with due dates, mark them complete, and stay
+                    on top of your workload.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                    <Calendar className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    Calendar View
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Visualize your month with a calendar that shows all your
+                    assignments and deadlines.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                    <Clock className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    Deadline Alerts
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Color-coded urgency indicators help you prioritize what
+                    needs attention first.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                    <GraduationCap className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    Built for Students
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Designed specifically for college students with a clean,
+                    distraction-free interface.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20">
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl font-bold text-foreground mb-4">
+              Ready to get organized?
+            </h2>
+            <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
+              Join thousands of students who are already staying on top of their
+              coursework with StudyHub.
+            </p>
+            <Link href="/auth/sign-up">
+              <Button size="lg" className="text-lg px-8">
+                Create Free Account
+              </Button>
+            </Link>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-border py-8">
+        <div className="container mx-auto px-4 text-center text-muted-foreground">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <GraduationCap className="h-5 w-5 text-primary" />
+            <span className="font-semibold text-foreground">StudyHub</span>
+          </div>
+          <p className="text-sm">
+            Helping students stay organized, one assignment at a time.
+          </p>
+        </div>
+      </footer>
     </div>
-  )
+  );
 }
